@@ -1,0 +1,22 @@
+alerting:
+  folder: Billing
+  rule_groups:
+  - name: "Synthetic Monitoring"
+    evaluation_time: 60
+    rules:
+    - name: "Slack: Currently using > 85% of Free Tier Synthentic Monitoring checks executions"
+      datasource: "grafanacloud-usage"
+      pending_time: 60m
+      expr: |-
+        (grafanacloud_org_sm_billable_check_executions{org_id="74960"} / grafanacloud_org_sm_included_check_executions{org_id="74960"}) * 100
+      annotations:
+        summary: "You're approaching the 100,000 free tier limit."
+        description: "Currently using > 85% of the free tier allowed synthetic monitoring executions."
+      labels:
+        severity: "warning"
+      evaluator:
+        type: "threshold"
+        expression: "gt"
+        from: 0
+        to: 85
+      contact_point: "Slack - #infrastructure-alerts"

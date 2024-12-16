@@ -1,0 +1,23 @@
+alerting:
+  folder: "Synthetic Monitoring"
+  rule_groups:
+  - name: "Endpoint Checking"
+    evaluation_time: 60
+    rules:
+    - name: "Slack: Site is unavailable for more than 5 minutes"
+      datasource: "grafanacloud-gregsharpe-prom"
+      pending_time: 15m
+      expr: |-
+        sum by (instance) (probe_success{})
+      annotations:
+        description: "The {{ $labels.instance }} site, has not returned a 200 HTTP response within the last 5 minutes. Please check the site is available."
+        summary: "The {{ $labels.instance }} has been unavailable for the past 5minutes."
+      labels:
+        severity: "warning"
+        site: "{{ $labels.instance }}"
+      evaluator:
+        type: "threshold"
+        expression: "lt"
+        from: 0
+        to: 1
+      contact_point: "Slack - #infrastructure-alerts"

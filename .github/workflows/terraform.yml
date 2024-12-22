@@ -1,21 +1,38 @@
-name: AWS Example Workflow
-
+name: "Terraform Infrastructure Deployment"
 on:
   push:
+    paths:
+      - "terraform/cloud/**" # Monitor changes in this directory
     branches:
-      - '**'
+      - main
   pull_request:
+    paths:
+      - "terraform/cloud/**" # Monitor changes for pull requests in this directory
     branches:
-      - '**'
+      - "**"
 
 jobs:
-  aws-job:
+  discover-changes:
     runs-on: ubuntu-latest
+    outputs:
+      changed_files: ${{ steps.detect_changes.outputs.changed_files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
+      - name: Detect changes
+        id: detect_changes
+        run: |
+          # List changed files in the specific directory
+          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^specific-directory/')
+          echo "Changed files: $files"
+          echo "::set-output name=changed_files::$(echo \"$files\" | tr '\\n' ' ')"
+
+  aws-authentication:
+    runs-on: ubuntu-latest
     permissions:
       contents: 'read'
       id-token: 'write'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,6 +44,18 @@ jobs:
           aws-region: eu-west-1
           role-to-assume: arn:aws:iam::001567907213:role/github-actions
 
-      - name: Get caller identity 1
+      - name: Get caller identity
         run: |
           aws sts get-caller-identity
+  create-jobs:
+    needs:
+      - "discover-changes"
+      - "aws-authentication"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.discover-changes.outputs.changed_files) }}
+    steps:
+      - name: Process file
+        run: |
+          echo "Processing file: ${{ matrix.file }}"

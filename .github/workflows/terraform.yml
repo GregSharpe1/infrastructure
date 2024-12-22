@@ -5,14 +5,14 @@ env:
 
 on:
   push:
-    paths:
-      - "${{ env.BASE_DIR }}/**" # Monitor changes for pushes in this directory
+    # paths:
+    #   - "${{ env.BASE_DIR }}/**" # Monitor changes for pushes in this directory
     branches:
       # - main
       - "**"
   pull_request:
-    paths:
-      - "${{ env.BASE_DIR }}/**" # Monitor changes for PRs in this directory
+    # paths:
+    #   - "${{ env.BASE_DIR }}/**" # Monitor changes for PRs in this directory
     branches:
       - "**"
 

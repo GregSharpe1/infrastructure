@@ -1,14 +1,18 @@
 name: "Terraform Infrastructure Deployment"
+
+env:
+  BASE_DIR: "terraform/cloud"
+
 on:
   push:
     paths:
-      - "terraform/cloud/**" # Monitor changes in this directory
+      - "${{ env.BASE_DIR }}/**" # Monitor changes for pushes in this directory
     branches:
       # - main
       - "**"
   pull_request:
     paths:
-      - "terraform/cloud/**" # Monitor changes for pull requests in this directory
+      - "${{ env.BASE_DIR }}/**" # Monitor changes for PRs in this directory
     branches:
       - "**"
 
@@ -20,14 +24,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch the entire history for diff comparison
+
+      - name: Fetch latest main branch
+        run: git fetch origin main:main
 
       - name: Detect changes
         id: detect_changes
         run: |
-          # List changed files in the specific directory
-          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^terraform/cloud/')
+          # Get the list of changed files between current branch and main
+          files=$(git diff --name-only main...HEAD -- ${{ env.BASE_DIR }})
           echo "Changed files: $files"
-          echo "::set-output name=changed_files::$(echo \"$files\" | tr '\\n' ' ')"
+          echo "::set-output name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
 
   aws-authentication:
     runs-on: ubuntu-latest
@@ -48,6 +57,7 @@ jobs:
       - name: Get caller identity
         run: |
           aws sts get-caller-identity
+
   create-jobs:
     needs:
       - "discover-changes"
@@ -55,8 +65,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        file: ${{ fromJson(needs.discover-changes.outputs.changed_files) }}
+        file: ${{ fromJson(needs.discover-changes.outputs.tf_dir_changes) }}
     steps:
       - name: Process file
         run: |
-          echo "Processing file: ${{ matrix.file }}"
+          echo "Processing file: ${{ env.BASE_DIR }}/${{ matrix.file }}"

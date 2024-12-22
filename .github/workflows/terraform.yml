@@ -4,7 +4,8 @@ on:
     paths:
       - "terraform/cloud/**" # Monitor changes in this directory
     branches:
-      - main
+      # - main
+      - "**"
   pull_request:
     paths:
       - "terraform/cloud/**" # Monitor changes for pull requests in this directory

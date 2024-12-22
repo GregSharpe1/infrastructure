@@ -25,7 +25,7 @@ jobs:
         id: detect_changes
         run: |
           # List changed files in the specific directory
-          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^specific-directory/')
+          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^terraform/cloud/')
           echo "Changed files: $files"
           echo "::set-output name=changed_files::$(echo \"$files\" | tr '\\n' ' ')"
 

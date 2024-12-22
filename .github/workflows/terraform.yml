@@ -1,0 +1,28 @@
+name: AWS Example Workflow
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  aws-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials 1
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::001567907213:role/github-actions
+
+      - name: Get caller identity 1
+        run: |
+          aws sts get-caller-identity

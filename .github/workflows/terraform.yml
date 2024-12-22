@@ -36,7 +36,8 @@ jobs:
           # Get the list of changed files between current branch and main
           files=$(git diff --name-only main...HEAD -- ${{ env.BASE_DIR }})
           echo "Changed files: $files"
-          echo "::set-output name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
+          echo "::save-state name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
+          echo "::save-output name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
 
   aws-authentication:
     runs-on: ubuntu-latest

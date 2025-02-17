@@ -6,7 +6,7 @@ alerting:
     rules:
     - name: "Slack: Site is unavailable for more than 5 minutes"
       datasource: "grafanacloud-gregsharpe-prom"
-      pending_time: 15m
+      pending_time: 5m
       expr: |-
         sum by (instance) (probe_success{})
       annotations:
@@ -20,4 +20,25 @@ alerting:
         expression: "lt"
         from: 0
         to: 1
-      contact_point: "Slack - #infrastructure-alerts"
+      contact_point:
+        name: "Slack - #infrastructure-alerts"
+        group_by: ["..."]
+    - name: "Slack: Site response time has been over 1 second for 5 minutes."
+      datasource: "grafanacloud-gregsharpe-prom"
+      pending_time: 5m
+      expr: |-
+        sum by (instance) (probe_duration_seconds{})
+      annotations:
+        description: "The {{ $labels.instance }} site's response time has been > 1 second for the past 5 minutes."
+        summary: "The {{ $labels.instance }}'s response latency has been over 1 second for 5 minutes."
+      labels:
+        severity: "warning"
+        site: "{{ $labels.instance }}"
+      evaluator:
+        type: "threshold"
+        expression: "gt"
+        from: 0
+        to: 1
+      contact_point:
+        name: "Slack - #infrastructure-alerts"
+

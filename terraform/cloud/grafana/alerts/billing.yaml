@@ -19,4 +19,5 @@ alerting:
         expression: "gt"
         from: 0
         to: 85
-      contact_point: "Slack - #infrastructure-alerts"
+      contact_point:
+        name: "Slack - #infrastructure-alerts"

@@ -41,7 +41,10 @@ jobs:
 
       - name: Terraform Format
         id: fmt
-        run: ${{ env.TF_CMD }} fmt -check
+        run: |
+          echo "Printing Environment Variables"
+          printenv
+          ${{ env.TF_CMD }} fmt -check
 
       - name: Terraform Init
         id: init

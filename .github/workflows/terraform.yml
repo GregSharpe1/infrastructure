@@ -1,73 +1,90 @@
-name: "Terraform Infrastructure Deployment"
-
-env:
-  BASE_DIR: "terraform/cloud"
+name: "Terraform CI/CD"
 
 on:
   push:
-    # paths:
-    #   - "${{ env.BASE_DIR }}/**" # Monitor changes for pushes in this directory
-    branches:
-      # - main
-      - "**"
+    branches: [ "main" ]
   pull_request:
-    # paths:
-    #   - "${{ env.BASE_DIR }}/**" # Monitor changes for PRs in this directory
-    branches:
-      - "**"
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      terraform_directory:
+        description: 'Directory containing Terraform files'
+        required: true
+        default: 'infrastructure/cloud/grafana/'
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  discover-changes:
+  terraform:
+    name: "Terraform"
     runs-on: ubuntu-latest
-    outputs:
-      changed_files: ${{ steps.detect_changes.outputs.changed_files }}
+    env:
+      # Set your environment variables here. For example:
+      TF_VAR_grafana_cloud_access_policy_token: ${{ secrets.GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}
+      TF_VAR_slack_infrastructure_alerts_webhook_url: ${{ secrets.SLACK_INFRASTRUCTURE_ALERTS_WEBHOOK_URL }}
+      TF_VAR_slack_webhook_testing_webhook_url: ${{ secrets.SLACK_WEBHOOK_TESTING_WEBHOOK_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_CMD: terraform -chdir=${{ github.event.inputs.terraform_directory || 'infrastructure/cloud/grafana' }}
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Fetch the entire history for diff comparison
-
-      - name: Fetch latest main branch
-        run: git fetch origin main:main
-
-      - name: Detect changes
-        id: detect_changes
-        run: |
-          # Get the list of changed files between current branch and main
-          files=$(git diff --name-only main...HEAD -- ${{ env.BASE_DIR }})
-          echo "Changed files: $files"
-          echo "::save-state name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
-          echo "::save-output name=tf_dir_changes::$(echo \"$files\" | awk -F'/' '{print $3}' | sort -u)"
-
-  aws-authentication:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-    steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials 1
-        id: creds
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
-          aws-region: eu-west-1
-          role-to-assume: arn:aws:iam::001567907213:role/github-actions
+          terraform_version: 1.10.5
 
-      - name: Get caller identity
-        run: |
-          aws sts get-caller-identity
+      - name: Terraform Format
+        id: fmt
+        run: ${{ env.TF_CMD }} fmt -check
 
-  create-jobs:
-    needs:
-      - "discover-changes"
-      - "aws-authentication"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        file: ${{ fromJson(needs.discover-changes.outputs.tf_dir_changes) }}
-    steps:
-      - name: Process file
-        run: |
-          echo "Processing file: ${{ env.BASE_DIR }}/${{ matrix.file }}"
+      - name: Terraform Init
+        id: init
+        run: ${{ env.TF_CMD }} init
+
+      - name: Terraform Validate
+        id: validate
+        run: ${{ env.TF_CMD }} validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: ${{ env.TF_CMD }} plan -no-color
+
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      # - name: Terraform Apply
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      #   run: ${{ env.TF_CMD }} apply -auto-approve

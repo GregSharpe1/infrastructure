@@ -15,3 +15,9 @@ resource "grafana_folder" "billing" {
 
   title = "Billing"
 }
+
+resource "grafana_folder" "synthetic_monitoring" {
+  provider = grafana.instance
+
+  title = "Synthetic Monitoring"
+}

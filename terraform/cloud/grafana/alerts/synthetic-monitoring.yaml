@@ -41,4 +41,5 @@ alerting:
         to: 1
       contact_point:
         name: "Slack - #infrastructure-alerts"
+        group_by: ["..."]
 

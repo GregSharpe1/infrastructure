@@ -1,3 +1,14 @@
+resource "grafana_contact_point" "email_devnull" {
+  provider = grafana.instance
+
+  name = "Email - /dev/null"
+  email {
+    addresses = ["devnull@trash.com"]
+    single_email = true
+    disable_resolve_message = false
+  }
+}
+
 resource "grafana_contact_point" "email" {
   provider = grafana.instance
 

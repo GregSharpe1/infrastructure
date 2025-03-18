@@ -10,7 +10,7 @@ on:
       terraform_directory:
         description: 'Directory containing Terraform files'
         required: true
-        default: 'infrastructure/cloud/grafana/'
+        default: 'terraform/cloud/grafana/'
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       TF_VAR_slack_webhook_testing_webhook_url: ${{ secrets.SLACK_WEBHOOK_TESTING_WEBHOOK_URL }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_CMD: terraform -chdir=${{ github.event.inputs.terraform_directory || 'infrastructure/cloud/grafana' }}
+      TF_CMD: terraform -chdir=${{ github.event.inputs.terraform_directory || 'terraform/cloud/grafana' }}
 
     steps:
       - name: Checkout

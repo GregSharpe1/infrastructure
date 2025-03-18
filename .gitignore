@@ -1,0 +1,4 @@
+# Ignoring all .envrc as that's where I manage secrets
+**/.envrc
+
+**/.terraform*

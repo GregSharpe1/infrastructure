@@ -4,7 +4,7 @@
 # Created here: https://grafana.com/orgs/gregsharpe/access-policies
 # Token name: terraform-top-level
 provider "grafana" {
-  alias = "cloud"
+  alias                     = "cloud"
   cloud_access_policy_token = var.grafana_cloud_access_policy_token
 }
 
@@ -17,7 +17,7 @@ provider "grafana" {
 provider "grafana" {
   alias = "instance"
 
-  url  =  grafana_cloud_stack.gregsharpe.url
+  url  = grafana_cloud_stack.gregsharpe.url
   auth = grafana_cloud_stack_service_account_token.token.key
 }
 

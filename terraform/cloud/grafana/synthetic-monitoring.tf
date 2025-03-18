@@ -8,10 +8,10 @@ resource "grafana_synthetic_monitoring_installation" "sm_stack" {
 locals {
   endpoints = {
     "greg_sharpe_wales_http" = {
-      "target"    = "https://greg.sharpe.wales",
+      "target" = "https://greg.sharpe.wales",
     },
     "the_rumour_generator_http" = {
-      "target"    = "https://therumourgenerator.co.uk",
+      "target" = "https://therumourgenerator.co.uk",
     },
     # "greg_sharpe_wales_http_custom_header" = {
     #   target = "https://greg.sharpe.wales/posts/terraform-kubernetes-namespace-removal",

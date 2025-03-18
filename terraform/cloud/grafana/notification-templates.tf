@@ -2,6 +2,6 @@
 resource "grafana_message_template" "default_template" {
   provider = grafana.instance
 
-  name = "Slack Template"
+  name     = "Slack Template"
   template = file("${path.module}/templates/message-templates/slack.gotmpl")
 }
